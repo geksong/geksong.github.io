@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>spring boot &amp; velocity</title>
+  <meta name="description" content="maven版本pom.xml配置spring boot web应用必须使用 spring-boot-starter-parent 作为父节点.dependency 必须的有 spring-boot-starter-web , spring-boot-starter-velocity , spring-boot-s...">
+  <meta name="author" content="geksong">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="spring boot &amp; velocity">
+  <meta name="twitter:description" content="maven版本pom.xml配置spring boot web应用必须使用 spring-boot-starter-parent 作为父节点.dependency 必须的有 spring-boot-starter-web , spring-boot-starter-velocity , spring-boot-s...">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="spring boot &amp; velocity">
+  <meta property="og:description" content="maven版本pom.xml配置spring boot web应用必须使用 spring-boot-starter-parent 作为父节点.dependency 必须的有 spring-boot-starter-web , spring-boot-starter-velocity , spring-boot-s...">
+  
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+  <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2015/08/springboot-velocity/">
+  <link rel="alternate" type="application/rss+xml" title="Sixpence" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+  
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">
+        <i class="fa fa-list btn-mobile-menu__icon"></i>
+        <i class="fa fa-angle-up btn-mobile-close__icon hidden"></i>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+
+        <a href="/#blog" title="前往 Sixpence 的主页" class="blog-button"><img src="/assets/images/logo.jpeg" width="80" alt="Sixpence logo" class="panel-cover__logo logo" /></a>
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for Sixpence" class="blog-button">Sixpence</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">Always look up at the moon</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">Do not forget to early loyal</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        <p class="panel-cover__description"><a href="https://github.com/geksong/geksong.github.io" target="_blank">See the code</a></p>
+        
+        
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="Visit blog" class="blog-button">Blog</a></li>
+                
+                  <li class="navigation__item"><a href="http://github.com/geksong" target="_blank" title="My Projects">Projects</a></li>
+                
+              </ul>
+            </nav>
+          </div>
+          
+          <div><nav class="cover-navigation navigation--social">
+  <ul class="navigation">
+
+  
+
+  
+  <!-- Github -->
+  <li class="navigation__item">
+    <a href="https://github.com/geksong" title="@geksong 的 Github" target="_blank">
+      <i class='social fa fa-github'></i>
+      <span class="label">Github</span>
+    </a>
+  </li>
+  
+  
+  
+
+  
+
+  <!-- RSS -->
+  <li class="navigation__item">
+    <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+      <i class='social fa fa-rss'></i>
+      <span class="label">RSS</span>
+    </a>
+  </li>
+
+  
+  <!-- Email -->
+  <li class="navigation__item">
+    <a href="mailto:zengzhangsong@gmail.com" title="Contact me">
+      <i class='social fa fa-envelope'></i>
+      <span class="label">Email</span>
+    </a>
+  </li>
+  
+
+  </ul>
+</nav>
+</div>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay cover-red"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="2015-08-06 14:32:24 +0800" itemprop="datePublished" class="post-meta__date date">2015-08-06</time> &#8226; <span class="post-meta__tags tags"></span>
+    </div>
+    <h1 class="post-title">spring boot & velocity</h1>
+  </header>
+
+  <section class="post">
+    <h2 id="maven版本">maven版本</h2>
+<h3 id="pomxml配置">pom.xml配置</h3>
+<p>spring boot web应用必须使用 <code class="highlighter-rouge">spring-boot-starter-parent</code> 作为父节点.
+dependency 必须的有 <code class="highlighter-rouge">spring-boot-starter-web</code> , <code class="highlighter-rouge">spring-boot-starter-velocity</code> , <code class="highlighter-rouge">spring-boot-starter-test</code>,<code class="highlighter-rouge">spring-boot-starter-actuator</code>,<code class="highlighter-rouge">junit</code></p>
+
+<p>大致的pom.xml文件内容为</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  &lt;parent&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+    &lt;version&gt;1.2.5.RELEASE&lt;/version&gt;
+  &lt;/parent&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+      &lt;version&gt;${spring.boot.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-velocity&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+</code></pre></div></div>
+
+<h3 id="spring-boot-启动入口">spring boot 启动入口</h3>
+<p>spring boot 的启动入口是一个简单的main函数，类必须要<code class="highlighter-rouge">@SpringBootApplication</code>注解，在此入口处
+可通过<code class="highlighter-rouge">@ImportResource</code>引入你自己的spring xml配置文件</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ImportResource;
+
+/**
+ * spring boot 启动
+ * Created by geksong on 15/8/4.
+ */
+@SpringBootApplication
+@ImportResource(value = {"classpath:applicationContext-common.xml"})
+public class Bootstrap {
+    public static void main(String[] args) {
+        ConfigurableApplicationContext configurableApplicationContext = SpringApplication.run(Bootstrap.class, args);
+    }
+}
+</code></pre></div></div>
+
+<h3 id="spring-boot-配置">spring boot 配置</h3>
+<p>理论上说spring boot开箱即用，不需要配置。但实际生产环境中还是需要做配置的，比如单机要跑多实例，端口就需要改。
+spring boot的配置文件默认都是在 <code class="highlighter-rouge">src/main/resources/application.properties</code> 文件中。
+一些比较常用的配置如下</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># EMBEDDED SERVER CONFIGURATION (ServerProperties)
+server.port=8080
+
+# HTTP encoding (HttpEncodingProperties)
+# the encoding of HTTP requests/responses
+spring.http.encoding.charset=UTF-8
+# enable http encoding support
+spring.http.encoding.enabled=true
+# force the configured encoding
+spring.http.encoding.force=true
+
+# Velocity config
+spring.velocity.content-type=text/html;charset=UTF-8
+spring.velocity.dateToolAttribute=dateTool
+spring.velocity.properties.input.encoding=UTF-8
+spring.velocity.properties.output.encoding=UTF-8
+</code></pre></div></div>
+
+<p>还记得大明湖畔的 <code class="highlighter-rouge">velocity.properties</code> 吗～？现在不需要了，在 <code class="highlighter-rouge">application.properties</code> 文件中有
+可设置的velocity配置。velocity乱码～？需要设置 <code class="highlighter-rouge">input.encoding</code> 和 <code class="highlighter-rouge">output.encoding</code> ，如上图
+<code class="highlighter-rouge">spring.velocity</code> 是前缀， <code class="highlighter-rouge">properties</code> 是键名，最终spring boot启动的时候会被包装成 <code class="highlighter-rouge">VelocityProperties</code>
+注入到 <code class="highlighter-rouge">VelocityAutoConfiguration</code> 中</p>
+
+<h3 id="faq">FAQ</h3>
+<h4 id="如何实现rest接口">如何实现rest接口</h4>
+<p>spring boot 已经帮你配置好了spring mvc。实现rest有两种方式</p>
+
+<ol>
+  <li>@Controller + @ResponseBody
+使用 <code class="highlighter-rouge">@ResponseBody</code> 注解的方法直接返回java pojo，spring mvc将包装为json返回
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Controller
+public class Activity618 {
+
+ @ResponseBody
+ @RequestMapping("/finance/activity/findModel")
+ public ActivityModel findModel() {
+     Date date = HolidaysUtils.addWorkday(new Date(), 3);
+     ActivityModel activityModel = new ActivityModel();
+     activityModel.setAge(34);
+     activityModel.setName("上来就撒娇");
+     return activityModel;
+ }
+}
+</code></pre></div>    </div>
+  </li>
+  <li>@RestController
+<code class="highlighter-rouge">@RestController</code> 实际上是 <code class="highlighter-rouge">@Controller</code> 和 <code class="highlighter-rouge">@ResponseBody</code> 包装的语法糖
+使用此注解的controller，方法返回java pojo，即是rest接口
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@RestController
+public class Activity618 {
+
+ @RequestMapping("/finance/activity/findModel")
+ public ActivityModel findModel() {
+     Date date = HolidaysUtils.addWorkday(new Date(), 3);
+     ActivityModel activityModel = new ActivityModel();
+     activityModel.setAge(34);
+     activityModel.setName("上来就撒娇");
+     return activityModel;
+ }
+}
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h4 id="如何使用velocity模版渲染">如何使用velocity模版渲染</h4>
+<p>spring boot 的velocity模版要求放在 <code class="highlighter-rouge">src/main/resources/templates</code> 目录下，spring boot的view名支持
+此目录下的层级目录方式假如我有一个velocity文件是 <code class="highlighter-rouge">src/main/resources/templates/index/index.vm</code> 。则
+此对应的view名是 <code class="highlighter-rouge">index/index</code></p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Controller
+public class Activity618 {
+
+    @RequestMapping("/finance/activity/718")
+    public String toIndex(Model model) {
+        model.addAttribute("message", "是老骥伏枥时间");
+        return "index/index";
+    }
+
+}
+</code></pre></div></div>
+
+<h2 id="gradle版本">gradle版本</h2>
+<h3 id="gradle-配置文件内容">gradle 配置文件内容</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>group 'org.geksong'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE")
+    }
+}
+p
+apply plugin: 'java'
+apply plugin: 'scala'
+apply plugin: 'spring-boot'
+apply plugin: 'war'
+
+jar {
+    baseName = "play-framework-demo"
+    version = "1.0-SNAPSHOT"
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.scala-lang:scala-library:2.11.6"
+    compile "org.scala-lang:scala-compiler:2.11.6"
+    compile "org.scala-lang:scala-reflect:2.11.6"
+    compile "org.apache.httpcomponents:httpclient:4.3.6"
+    compile "com.alibaba:fastjson:1.1.41"
+    compile "org.slf4j:slf4j-api:1.7.5"
+    compile "org.apache.commons:commons-lang3:3.2"
+    compile "commons-httpclient:commons-httpclient:3.1"
+    compile "org.apache.velocity:velocity:1.7"
+    compile "org.apache.velocity:velocity-tools:2.0"
+    compile "jstl:jstl:1.2"
+    compile "org.apache.tomcat.embed:tomcat-embed-jasper"
+    compile "org.springframework.boot:spring-boot-starter-velocity"
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+</code></pre></div></div>
+
+  </section>
+</article>
+
+<section class="read-more">
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">最近的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2015/08/springmvc-velocity/" title="link to spring mvc & velocity">spring mvc & velocity</a></h2>
+       <p class="excerpt">pom.xml&lt;?xml version="1.0"?&gt;&lt;project        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"        xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-in...&hellip;</p>
+       <div class="post-list__meta"><time datetime="2015-08-21 14:32:24 +0800" class="post-list__meta--date date">2015-08-21</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2015/08/springmvc-velocity/>继续阅读</a></div>
+   </div>
+   
+   
+   
+</section>
+
+<section class="post-comments">
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2015/08/springboot-velocity/";
+        this.page.identifier = "/2015/08/springboot-velocity/";
+    };
+
+    var disqus_shortname = 'geksong-github-io';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+  
+  
+  
+</section>
+
+
+            <section class="footer">
+    <footer>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+
+    
+  </body>
+
+</html>

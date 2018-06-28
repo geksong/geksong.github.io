@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>mongodb cli 简单使用</title>
+  <meta name="description" content="连接远程主机mongo -u uname -p pwd ip:port/dbname">
+  <meta name="author" content="geksong">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="mongodb cli 简单使用">
+  <meta name="twitter:description" content="连接远程主机mongo -u uname -p pwd ip:port/dbname">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="mongodb cli 简单使用">
+  <meta property="og:description" content="连接远程主机mongo -u uname -p pwd ip:port/dbname">
+  
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+  <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2015/08/mongodb-cli/">
+  <link rel="alternate" type="application/rss+xml" title="Sixpence" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+  
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">
+        <i class="fa fa-list btn-mobile-menu__icon"></i>
+        <i class="fa fa-angle-up btn-mobile-close__icon hidden"></i>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+
+        <a href="/#blog" title="前往 Sixpence 的主页" class="blog-button"><img src="/assets/images/logo.jpeg" width="80" alt="Sixpence logo" class="panel-cover__logo logo" /></a>
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for Sixpence" class="blog-button">Sixpence</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">Always look up at the moon</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">Do not forget to early loyal</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        <p class="panel-cover__description"><a href="https://github.com/geksong/geksong.github.io" target="_blank">See the code</a></p>
+        
+        
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="Visit blog" class="blog-button">Blog</a></li>
+                
+                  <li class="navigation__item"><a href="http://github.com/geksong" target="_blank" title="My Projects">Projects</a></li>
+                
+              </ul>
+            </nav>
+          </div>
+          
+          <div><nav class="cover-navigation navigation--social">
+  <ul class="navigation">
+
+  
+
+  
+  <!-- Github -->
+  <li class="navigation__item">
+    <a href="https://github.com/geksong" title="@geksong 的 Github" target="_blank">
+      <i class='social fa fa-github'></i>
+      <span class="label">Github</span>
+    </a>
+  </li>
+  
+  
+  
+
+  
+
+  <!-- RSS -->
+  <li class="navigation__item">
+    <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+      <i class='social fa fa-rss'></i>
+      <span class="label">RSS</span>
+    </a>
+  </li>
+
+  
+  <!-- Email -->
+  <li class="navigation__item">
+    <a href="mailto:zengzhangsong@gmail.com" title="Contact me">
+      <i class='social fa fa-envelope'></i>
+      <span class="label">Email</span>
+    </a>
+  </li>
+  
+
+  </ul>
+</nav>
+</div>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay cover-red"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="2015-08-21 14:32:24 +0800" itemprop="datePublished" class="post-meta__date date">2015-08-21</time> &#8226; <span class="post-meta__tags tags"></span>
+    </div>
+    <h1 class="post-title">mongodb cli 简单使用</h1>
+  </header>
+
+  <section class="post">
+    <h2 id="连接远程主机">连接远程主机</h2>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mongo -u uname -p pwd ip:port/dbname
+</code></pre></div></div>
+
+<h2 id="批量执行命令">批量执行命令</h2>
+<p>mongodb client 可执行js脚本，但js里不是简单的mongo命令堆积。借用mongo的jsapi查询
+或更新数据，脚本如下:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var cursor = db.activationSource.find({"$and":[{"source":4},{"idfa":{"$in":['6E45C0AE-89BA-4AFF-BC60-27059042EA65','5B2059B8-7E52-444C-A222-51DBB02D7EE0']}}]}, {"callbackUrl":1});
+print(cursor.size());
+while(cursor.hasNext()) {
+        var tmp = cursor.next();
+        print(tmp.callbackUrl);
+}
+</code></pre></div></div>
+<p>mongo 执行此js，通过shell命令可写入到文件</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mongo -u uname -p pwd ip:port/dbname queryCallback.js &gt; querycall.txt
+</code></pre></div></div>
+
+  </section>
+</article>
+
+<section class="read-more">
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">最近的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2018/06/blockchain-summary/" title="link to 区块链概述">区块链概述</a></h2>
+       <p class="excerpt">关于区块链的描述有很多，有的描述为分布式账本，有的描述为是分布式数据库，有的定义为去中心化的对等网络。从技术上的角度讲，我更愿意认为它是在全网范围内的一种分布式架构。产生这样的理解是因为本质上来说它是分布式的，当然我们现在所普遍采用的微服务架构实际上都是分布式的，但关键在于这个分布式服务架构节点所在的范围，微服务架构里所有的节点都是集中的(这里的集中并不是指机房，而是节点所属的主体，也就是所有这些节点是属于同一个公司，这个公司对这些节点拥有完全的控制权)，而区块链则是节点分布在全世界的网络...&hellip;</p>
+       <div class="post-list__meta"><time datetime="2018-06-28 14:32:24 +0800" class="post-list__meta--date date">2018-06-28</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/06/blockchain-summary/>继续阅读</a></div>
+   </div>
+   
+   
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">更早的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2015/08/springmvc-velocity/" title="link to spring mvc & velocity">spring mvc & velocity</a></h2>
+       <p class="excerpt">pom.xml&lt;?xml version="1.0"?&gt;&lt;project        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"        xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-in...&hellip;</p>
+       <div class="post-list__meta"><time datetime="2015-08-21 14:32:24 +0800" class="post-list__meta--date date">2015-08-21</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2015/08/springmvc-velocity/>继续阅读</a></div>
+   </div>
+   
+</section>
+
+<section class="post-comments">
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2015/08/mongodb-cli/";
+        this.page.identifier = "/2015/08/mongodb-cli/";
+    };
+
+    var disqus_shortname = 'geksong-github-io';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+  
+  
+  
+</section>
+
+
+            <section class="footer">
+    <footer>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+
+    
+  </body>
+
+</html>
