@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Google jib镜像打包试水</title>
+  <meta name="description" content="介绍">
+  <meta name="author" content="geksong">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Google jib镜像打包试水">
+  <meta name="twitter:description" content="介绍">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Google jib镜像打包试水">
+  <meta property="og:description" content="介绍">
+  
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+  <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/07/docker-jib/">
+  <link rel="alternate" type="application/rss+xml" title="Sixpence" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+  
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">
+        <i class="fa fa-list btn-mobile-menu__icon"></i>
+        <i class="fa fa-angle-up btn-mobile-close__icon hidden"></i>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+
+        <a href="/#blog" title="前往 Sixpence 的主页" class="blog-button"><img src="/assets/images/logo.jpeg" width="80" alt="Sixpence logo" class="panel-cover__logo logo" /></a>
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for Sixpence" class="blog-button">Sixpence</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">Always look up at the moon</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">Do not forget to early loyal</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        <p class="panel-cover__description"><a href="https://github.com/geksong/geksong.github.io" target="_blank">See the code</a></p>
+        
+        
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="Visit blog" class="blog-button">Blog</a></li>
+                
+                  <li class="navigation__item"><a href="http://github.com/geksong" target="_blank" title="My Projects">Projects</a></li>
+                
+              </ul>
+            </nav>
+          </div>
+          
+          <div><nav class="cover-navigation navigation--social">
+  <ul class="navigation">
+
+  
+
+  
+  <!-- Github -->
+  <li class="navigation__item">
+    <a href="https://github.com/geksong" title="@geksong 的 Github" target="_blank">
+      <i class='social fa fa-github'></i>
+      <span class="label">Github</span>
+    </a>
+  </li>
+  
+  
+  
+
+  
+
+  <!-- RSS -->
+  <li class="navigation__item">
+    <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+      <i class='social fa fa-rss'></i>
+      <span class="label">RSS</span>
+    </a>
+  </li>
+
+  
+  <!-- Email -->
+  <li class="navigation__item">
+    <a href="mailto:zengzhangsong@gmail.com" title="Contact me">
+      <i class='social fa fa-envelope'></i>
+      <span class="label">Email</span>
+    </a>
+  </li>
+  
+
+  </ul>
+</nav>
+</div>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="2018-07-20 14:32:24 +0800" itemprop="datePublished" class="post-meta__date date">2018-07-20</time> &#8226; <span class="post-meta__tags tags"></span>
+    </div>
+    <h1 class="post-title">Google jib镜像打包试水</h1>
+  </header>
+
+  <section class="post">
+    <h2 id="介绍">介绍</h2>
+
+<p>Jib是google开源的镜像构建工具，提供以maven plugin的方式实现应用打包成docker的镜像。最主要的目标是将dockerfile，docker build，docker push这样偏发布运维层面的事情对开发者屏蔽，想想一个应用开发者当需要创建一个应用生成镜像时要写一个复杂的Dockerfile，是何其痛苦的事情。jib则帮做了这件事情，使得应用开发不再需要关注镜像打包的细节，集成在mvn package阶段，coder just coding。Jib的打包是docker 镜像中的层的更新，打包更快，没有改变的层不会重复打包。一个基础工具能达到提高coder的开发效率，帮助coder聚焦在自己擅长的领域就是一个完美的基础工具。</p>
+
+<p>官方文档说的目标</p>
+
+<ul>
+  <li>
+    <p>更快 - 能更快的发布更新。Jib将应用拆分成多个层，从类里拆分依赖，使得有更新时不再需要Docker完全重新打包</p>
+  </li>
+  <li>
+    <p>可覆盖更新 - 重新打包没有变更的应用时总是同一个镜像。节省不必要的重复更新。</p>
+  </li>
+  <li>
+    <p>减少命令操作 - 减少在打镜像过程中的命令行操作。直接使用maven或gradle实现编译打包push到远程镜像仓库。再也不需要写Dockerfile然后调用docker build/push</p>
+  </li>
+</ul>
+
+<h2 id="示例">示例</h2>
+
+<p>本例使用Jib打包一个jibdemo的latest镜像并推送到本地的docker registry <a href="https://github.com/geksong/jibdemo">源码</a>
+因为实际都是maven的plugin跑，所以这里直接先贴<code class="highlighter-rouge">pom.xml</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="nt">&lt;project</span> <span class="na">xmlns=</span><span class="s">"http://maven.apache.org/POM/4.0.0"</span> <span class="na">xmlns:xsi=</span><span class="s">"http://www.w3.org/2001/XMLSchema-instance"</span>
+	<span class="na">xsi:schemaLocation=</span><span class="s">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="nt">&gt;</span>
+	<span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+
+	<span class="nt">&lt;groupId&gt;</span>org.sixpence<span class="nt">&lt;/groupId&gt;</span>
+	<span class="nt">&lt;artifactId&gt;</span>jibdemo<span class="nt">&lt;/artifactId&gt;</span>
+	<span class="nt">&lt;version&gt;</span>0.0.1-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+
+	<span class="nt">&lt;packaging&gt;</span>jar<span class="nt">&lt;/packaging&gt;</span>
+
+	<span class="nt">&lt;name&gt;</span>jibdemo<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;description&gt;</span>jibdemo<span class="nt">&lt;/description&gt;</span>
+
+	<span class="nt">&lt;properties&gt;</span>
+		<span class="nt">&lt;project.build.sourceEncoding&gt;</span>UTF-8<span class="nt">&lt;/project.build.sourceEncoding&gt;</span>
+		<span class="nt">&lt;project.reporting.outputEncoding&gt;</span>UTF-8<span class="nt">&lt;/project.reporting.outputEncoding&gt;</span>
+		<span class="nt">&lt;java.version&gt;</span>1.8<span class="nt">&lt;/java.version&gt;</span>
+		<span class="nt">&lt;jib-maven-plugin.version&gt;</span>0.9.6<span class="nt">&lt;/jib-maven-plugin.version&gt;</span>
+	<span class="nt">&lt;/properties&gt;</span>
+
+	<span class="nt">&lt;dependencies&gt;</span>
+
+	<span class="nt">&lt;/dependencies&gt;</span>
+
+	<span class="nt">&lt;build&gt;</span>
+		<span class="nt">&lt;plugins&gt;</span>
+			<span class="nt">&lt;plugin&gt;</span>
+				<span class="nt">&lt;groupId&gt;</span>org.apache.maven.plugins<span class="nt">&lt;/groupId&gt;</span>
+				<span class="nt">&lt;artifactId&gt;</span>maven-compiler-plugin<span class="nt">&lt;/artifactId&gt;</span>
+				<span class="nt">&lt;configuration&gt;</span>
+					<span class="nt">&lt;source&gt;</span>1.8<span class="nt">&lt;/source&gt;</span>
+					<span class="nt">&lt;target&gt;</span>1.8<span class="nt">&lt;/target&gt;</span>
+				<span class="nt">&lt;/configuration&gt;</span>
+			<span class="nt">&lt;/plugin&gt;</span>
+
+			<span class="c">&lt;!-- Jib --&gt;</span>
+			<span class="nt">&lt;plugin&gt;</span>
+				<span class="nt">&lt;groupId&gt;</span>com.google.cloud.tools<span class="nt">&lt;/groupId&gt;</span>
+				<span class="nt">&lt;artifactId&gt;</span>jib-maven-plugin<span class="nt">&lt;/artifactId&gt;</span>
+				<span class="nt">&lt;version&gt;</span>${jib-maven-plugin.version}<span class="nt">&lt;/version&gt;</span>
+				<span class="nt">&lt;configuration&gt;</span>
+					<span class="nt">&lt;allowInsecureRegistries&gt;</span>true<span class="nt">&lt;/allowInsecureRegistries&gt;</span>
+					<span class="nt">&lt;from&gt;</span>
+						<span class="nt">&lt;image&gt;</span>openjdk:8-jre-alpine<span class="nt">&lt;/image&gt;</span>
+						<span class="nt">&lt;credHelper&gt;</span>osxkeychain<span class="nt">&lt;/credHelper&gt;</span>
+					<span class="nt">&lt;/from&gt;</span>
+					<span class="nt">&lt;to&gt;</span>
+						<span class="nt">&lt;image&gt;</span>localhost:5000/jibdemo:latest<span class="nt">&lt;/image&gt;</span>
+						<span class="nt">&lt;credHelper&gt;</span>osxkeychain<span class="nt">&lt;/credHelper&gt;</span>
+					<span class="nt">&lt;/to&gt;</span>
+					<span class="nt">&lt;container&gt;</span>
+						<span class="nt">&lt;mainClass&gt;</span>org.sixpence.jibdemo.BootStrapApplication<span class="nt">&lt;/mainClass&gt;</span>
+					<span class="nt">&lt;/container&gt;</span>
+				<span class="nt">&lt;/configuration&gt;</span>
+				<span class="nt">&lt;executions&gt;</span>
+					<span class="nt">&lt;execution&gt;</span>
+						<span class="nt">&lt;phase&gt;</span>package<span class="nt">&lt;/phase&gt;</span>
+						<span class="nt">&lt;goals&gt;</span>
+							<span class="nt">&lt;goal&gt;</span>build<span class="nt">&lt;/goal&gt;</span>
+						<span class="nt">&lt;/goals&gt;</span>
+					<span class="nt">&lt;/execution&gt;</span>
+				<span class="nt">&lt;/executions&gt;</span>
+			<span class="nt">&lt;/plugin&gt;</span>
+		<span class="nt">&lt;/plugins&gt;</span>
+	<span class="nt">&lt;/build&gt;</span>
+
+<span class="nt">&lt;/project&gt;</span>
+
+</code></pre></div></div>
+
+<p>主要关注<code class="highlighter-rouge">plugins/plugin/</code>，需要引用jib plugin，即</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;groupId&gt;com.google.cloud.tools&lt;/groupId&gt;
+&lt;artifactId&gt;jib-maven-plugin&lt;/artifactId&gt;
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">configuration</code>主要是对镜像打包过程使用到的配置(0.9.x版本的配置和0.1.x版本的配置标签名不同，本例使用是0.9.6版本的Jib)，Jib支持的配置如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>标签名</th>
+      <th>值类型</th>
+      <th>默认值</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>from</td>
+      <td>含子属性</td>
+      <td>参见from子属性</td>
+      <td>配置该应用打包所使用的基础镜像名</td>
+    </tr>
+    <tr>
+      <td>to</td>
+      <td>含子属性</td>
+      <td>没有默认值，这个标签必须要显示写明</td>
+      <td>配置该应用最终打包成的镜像名</td>
+    </tr>
+    <tr>
+      <td>container</td>
+      <td>含子属性</td>
+      <td>参见container子属性</td>
+      <td>配置镜像的container</td>
+    </tr>
+    <tr>
+      <td>useOnlyProjectCache</td>
+      <td>boolean</td>
+      <td>false</td>
+      <td>配置cache的范围，如果设置为true，jib在不同的gradle项目间共享缓存</td>
+    </tr>
+    <tr>
+      <td>allowInsecureRegistries</td>
+      <td>boolean</td>
+      <td>false</td>
+      <td>这个值如果设置为true，Jib会用http作为https的fallback策略，当https请求不通时，会使用http请求</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code class="highlighter-rouge">from</code>的子属性</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>属性名</th>
+      <th>类型</th>
+      <th>默认值</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>image</td>
+      <td>string</td>
+      <td><code class="highlighter-rouge">gcr.io/distroless/java</code></td>
+      <td>基础镜像</td>
+    </tr>
+    <tr>
+      <td>credHelper</td>
+      <td>string</td>
+      <td>无</td>
+      <td>docker pull验证证书类型的后缀名</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code class="highlighter-rouge">container</code>的子属性</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>属性名</th>
+      <th>类型</th>
+      <th>默认值</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>jvmFlags</td>
+      <td>list</td>
+      <td>无</td>
+      <td>容器内jvm启动时的环境变量</td>
+    </tr>
+    <tr>
+      <td>mainClass</td>
+      <td>String</td>
+      <td>支持推导</td>
+      <td>容器的entrypoint的主类</td>
+    </tr>
+    <tr>
+      <td>args</td>
+      <td>list</td>
+      <td>无</td>
+      <td>启动主类时main方法的入参</td>
+    </tr>
+    <tr>
+      <td>ports</td>
+      <td>list</td>
+      <td>无</td>
+      <td>运行时容器对外暴露的端口</td>
+    </tr>
+    <tr>
+      <td>format</td>
+      <td>string</td>
+      <td>Docker</td>
+      <td>镜像的类型，jib还支持OCI镜像</td>
+    </tr>
+    <tr>
+      <td>useCurrentTimestamp</td>
+      <td>boolean</td>
+      <td>false</td>
+      <td>默认时，Jib会抹掉所有时间戳以保证镜像的可再现性，如果此值被设置为true，Jib会把镜像的创建时间标记为镜像的构建时间，这样牺牲了可再现性来方便可以轻松的判断镜像是什么时候创建的</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>执行<code class="highlighter-rouge">mvn package</code>则可以对当前应用打包，Jib会将镜像推送<code class="highlighter-rouge">to</code>标签指定的镜像地址上。</p>
+
+  </section>
+</article>
+
+<section class="read-more">
+   
+   
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">更早的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2018/06/btc-trans-data-structure/" title="link to BTC交易记录数据结构">BTC交易记录数据结构</a></h2>
+       <p class="excerpt">&hellip;</p>
+       <div class="post-list__meta"><time datetime="2018-06-29 14:32:24 +0800" class="post-list__meta--date date">2018-06-29</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/06/btc-trans-data-structure/>继续阅读</a></div>
+   </div>
+   
+</section>
+
+<section class="post-comments">
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/07/docker-jib/";
+        this.page.identifier = "/2018/07/docker-jib/";
+    };
+
+    var disqus_shortname = 'geksong-github-io';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+  
+  
+  
+</section>
+
+
+            <section class="footer">
+    <footer>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+
+    
+  </body>
+
+</html>

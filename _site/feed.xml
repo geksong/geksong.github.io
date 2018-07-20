@@ -5,9 +5,253 @@
     <description>Do not forget to early loyal</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 29 Jun 2018 11:26:14 +0800</pubDate>
-    <lastBuildDate>Fri, 29 Jun 2018 11:26:14 +0800</lastBuildDate>
+    <pubDate>Fri, 20 Jul 2018 19:25:24 +0800</pubDate>
+    <lastBuildDate>Fri, 20 Jul 2018 19:25:24 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Google jib镜像打包试水</title>
+        <description>&lt;h2 id=&quot;介绍&quot;&gt;介绍&lt;/h2&gt;
+
+&lt;p&gt;Jib是google开源的镜像构建工具，提供以maven plugin的方式实现应用打包成docker的镜像。最主要的目标是将dockerfile，docker build，docker push这样偏发布运维层面的事情对开发者屏蔽，想想一个应用开发者当需要创建一个应用生成镜像时要写一个复杂的Dockerfile，是何其痛苦的事情。jib则帮做了这件事情，使得应用开发不再需要关注镜像打包的细节，集成在mvn package阶段，coder just coding。Jib的打包是docker 镜像中的层的更新，打包更快，没有改变的层不会重复打包。一个基础工具能达到提高coder的开发效率，帮助coder聚焦在自己擅长的领域就是一个完美的基础工具。&lt;/p&gt;
+
+&lt;p&gt;官方文档说的目标&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;更快 - 能更快的发布更新。Jib将应用拆分成多个层，从类里拆分依赖，使得有更新时不再需要Docker完全重新打包&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;可覆盖更新 - 重新打包没有变更的应用时总是同一个镜像。节省不必要的重复更新。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;减少命令操作 - 减少在打镜像过程中的命令行操作。直接使用maven或gradle实现编译打包push到远程镜像仓库。再也不需要写Dockerfile然后调用docker build/push&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;示例&quot;&gt;示例&lt;/h2&gt;
+
+&lt;p&gt;本例使用Jib打包一个jibdemo的latest镜像并推送到本地的docker registry &lt;a href=&quot;https://github.com/geksong/jibdemo&quot;&gt;源码&lt;/a&gt;
+因为实际都是maven的plugin跑，所以这里直接先贴&lt;code class=&quot;highlighter-rouge&quot;&gt;pom.xml&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;project&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xmlns=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://maven.apache.org/POM/4.0.0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xmlns:xsi=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&lt;/span&gt;
+	&lt;span class=&quot;na&quot;&gt;xsi:schemaLocation=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;modelVersion&amp;gt;&lt;/span&gt;4.0.0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/modelVersion&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.sixpence&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;jibdemo&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;0.0.1-SNAPSHOT&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;packaging&amp;gt;&lt;/span&gt;jar&lt;span class=&quot;nt&quot;&gt;&amp;lt;/packaging&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;jibdemo&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;description&amp;gt;&lt;/span&gt;jibdemo&lt;span class=&quot;nt&quot;&gt;&amp;lt;/description&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+		&lt;span class=&quot;nt&quot;&gt;&amp;lt;project.build.sourceEncoding&amp;gt;&lt;/span&gt;UTF-8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/project.build.sourceEncoding&amp;gt;&lt;/span&gt;
+		&lt;span class=&quot;nt&quot;&gt;&amp;lt;project.reporting.outputEncoding&amp;gt;&lt;/span&gt;UTF-8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/project.reporting.outputEncoding&amp;gt;&lt;/span&gt;
+		&lt;span class=&quot;nt&quot;&gt;&amp;lt;java.version&amp;gt;&lt;/span&gt;1.8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/java.version&amp;gt;&lt;/span&gt;
+		&lt;span class=&quot;nt&quot;&gt;&amp;lt;jib-maven-plugin.version&amp;gt;&lt;/span&gt;0.9.6&lt;span class=&quot;nt&quot;&gt;&amp;lt;/jib-maven-plugin.version&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt;
+
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;build&amp;gt;&lt;/span&gt;
+		&lt;span class=&quot;nt&quot;&gt;&amp;lt;plugins&amp;gt;&lt;/span&gt;
+			&lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-compiler-plugin&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;source&amp;gt;&lt;/span&gt;1.8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/source&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;target&amp;gt;&lt;/span&gt;1.8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/target&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+			&lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+
+			&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Jib --&amp;gt;&lt;/span&gt;
+			&lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;com.google.cloud.tools&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;jib-maven-plugin&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;${jib-maven-plugin.version}&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;allowInsecureRegistries&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/allowInsecureRegistries&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;from&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;image&amp;gt;&lt;/span&gt;openjdk:8-jre-alpine&lt;span class=&quot;nt&quot;&gt;&amp;lt;/image&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;credHelper&amp;gt;&lt;/span&gt;osxkeychain&lt;span class=&quot;nt&quot;&gt;&amp;lt;/credHelper&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;/from&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;to&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;image&amp;gt;&lt;/span&gt;localhost:5000/jibdemo:latest&lt;span class=&quot;nt&quot;&gt;&amp;lt;/image&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;credHelper&amp;gt;&lt;/span&gt;osxkeychain&lt;span class=&quot;nt&quot;&gt;&amp;lt;/credHelper&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;/to&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;container&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;mainClass&amp;gt;&lt;/span&gt;org.sixpence.jibdemo.BootStrapApplication&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mainClass&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;/container&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;executions&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;execution&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;phase&amp;gt;&lt;/span&gt;package&lt;span class=&quot;nt&quot;&gt;&amp;lt;/phase&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;goals&amp;gt;&lt;/span&gt;
+							&lt;span class=&quot;nt&quot;&gt;&amp;lt;goal&amp;gt;&lt;/span&gt;build&lt;span class=&quot;nt&quot;&gt;&amp;lt;/goal&amp;gt;&lt;/span&gt;
+						&lt;span class=&quot;nt&quot;&gt;&amp;lt;/goals&amp;gt;&lt;/span&gt;
+					&lt;span class=&quot;nt&quot;&gt;&amp;lt;/execution&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;nt&quot;&gt;&amp;lt;/executions&amp;gt;&lt;/span&gt;
+			&lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+		&lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugins&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;/build&amp;gt;&lt;/span&gt;
+
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/project&amp;gt;&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;主要关注&lt;code class=&quot;highlighter-rouge&quot;&gt;plugins/plugin/&lt;/code&gt;，需要引用jib plugin，即&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;groupId&amp;gt;com.google.cloud.tools&amp;lt;/groupId&amp;gt;
+&amp;lt;artifactId&amp;gt;jib-maven-plugin&amp;lt;/artifactId&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;configuration&lt;/code&gt;主要是对镜像打包过程使用到的配置(0.9.x版本的配置和0.1.x版本的配置标签名不同，本例使用是0.9.6版本的Jib)，Jib支持的配置如下:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;标签名&lt;/th&gt;
+      &lt;th&gt;值类型&lt;/th&gt;
+      &lt;th&gt;默认值&lt;/th&gt;
+      &lt;th&gt;说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;from&lt;/td&gt;
+      &lt;td&gt;含子属性&lt;/td&gt;
+      &lt;td&gt;参见from子属性&lt;/td&gt;
+      &lt;td&gt;配置该应用打包所使用的基础镜像名&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;to&lt;/td&gt;
+      &lt;td&gt;含子属性&lt;/td&gt;
+      &lt;td&gt;没有默认值，这个标签必须要显示写明&lt;/td&gt;
+      &lt;td&gt;配置该应用最终打包成的镜像名&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;container&lt;/td&gt;
+      &lt;td&gt;含子属性&lt;/td&gt;
+      &lt;td&gt;参见container子属性&lt;/td&gt;
+      &lt;td&gt;配置镜像的container&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;useOnlyProjectCache&lt;/td&gt;
+      &lt;td&gt;boolean&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;配置cache的范围，如果设置为true，jib在不同的gradle项目间共享缓存&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;allowInsecureRegistries&lt;/td&gt;
+      &lt;td&gt;boolean&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;这个值如果设置为true，Jib会用http作为https的fallback策略，当https请求不通时，会使用http请求&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;from&lt;/code&gt;的子属性&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;属性名&lt;/th&gt;
+      &lt;th&gt;类型&lt;/th&gt;
+      &lt;th&gt;默认值&lt;/th&gt;
+      &lt;th&gt;说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;image&lt;/td&gt;
+      &lt;td&gt;string&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;gcr.io/distroless/java&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;基础镜像&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;credHelper&lt;/td&gt;
+      &lt;td&gt;string&lt;/td&gt;
+      &lt;td&gt;无&lt;/td&gt;
+      &lt;td&gt;docker pull验证证书类型的后缀名&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;container&lt;/code&gt;的子属性&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;属性名&lt;/th&gt;
+      &lt;th&gt;类型&lt;/th&gt;
+      &lt;th&gt;默认值&lt;/th&gt;
+      &lt;th&gt;说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;jvmFlags&lt;/td&gt;
+      &lt;td&gt;list&lt;/td&gt;
+      &lt;td&gt;无&lt;/td&gt;
+      &lt;td&gt;容器内jvm启动时的环境变量&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;mainClass&lt;/td&gt;
+      &lt;td&gt;String&lt;/td&gt;
+      &lt;td&gt;支持推导&lt;/td&gt;
+      &lt;td&gt;容器的entrypoint的主类&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;args&lt;/td&gt;
+      &lt;td&gt;list&lt;/td&gt;
+      &lt;td&gt;无&lt;/td&gt;
+      &lt;td&gt;启动主类时main方法的入参&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ports&lt;/td&gt;
+      &lt;td&gt;list&lt;/td&gt;
+      &lt;td&gt;无&lt;/td&gt;
+      &lt;td&gt;运行时容器对外暴露的端口&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;format&lt;/td&gt;
+      &lt;td&gt;string&lt;/td&gt;
+      &lt;td&gt;Docker&lt;/td&gt;
+      &lt;td&gt;镜像的类型，jib还支持OCI镜像&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;useCurrentTimestamp&lt;/td&gt;
+      &lt;td&gt;boolean&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;默认时，Jib会抹掉所有时间戳以保证镜像的可再现性，如果此值被设置为true，Jib会把镜像的创建时间标记为镜像的构建时间，这样牺牲了可再现性来方便可以轻松的判断镜像是什么时候创建的&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;执行&lt;code class=&quot;highlighter-rouge&quot;&gt;mvn package&lt;/code&gt;则可以对当前应用打包，Jib会将镜像推送&lt;code class=&quot;highlighter-rouge&quot;&gt;to&lt;/code&gt;标签指定的镜像地址上。&lt;/p&gt;
+</description>
+        <pubDate>Fri, 20 Jul 2018 14:32:24 +0800</pubDate>
+        <link>http://localhost:4000/2018/07/docker-jib/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/07/docker-jib/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>BTC交易记录数据结构</title>
+        <description>
+</description>
+        <pubDate>Fri, 29 Jun 2018 14:32:24 +0800</pubDate>
+        <link>http://localhost:4000/2018/06/btc-trans-data-structure/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/06/btc-trans-data-structure/</guid>
+        
+        
+      </item>
     
       <item>
         <title>区块链概述</title>
