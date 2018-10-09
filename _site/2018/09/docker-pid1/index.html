@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>使docker容器内的进程不以pid=1运行</title>
+  <meta name="description" content="在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程">
+  <meta name="author" content="geksong">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="使docker容器内的进程不以pid=1运行">
+  <meta name="twitter:description" content="在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="使docker容器内的进程不以pid=1运行">
+  <meta property="og:description" content="在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程">
+  
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+  <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/09/docker-pid1/">
+  <link rel="alternate" type="application/rss+xml" title="Sixpence" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+  
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">
+        <i class="fa fa-list btn-mobile-menu__icon"></i>
+        <i class="fa fa-angle-up btn-mobile-close__icon hidden"></i>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+
+        <a href="/#blog" title="前往 Sixpence 的主页" class="blog-button"><img src="/assets/images/logo.jpeg" width="80" alt="Sixpence logo" class="panel-cover__logo logo" /></a>
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for Sixpence" class="blog-button">Sixpence</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">Always look up at the moon</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">Do not forget to early loyal</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        <p class="panel-cover__description"><a href="https://github.com/geksong/geksong.github.io" target="_blank">See the code</a></p>
+        
+        
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="Visit blog" class="blog-button">Blog</a></li>
+                
+                  <li class="navigation__item"><a href="http://github.com/geksong" target="_blank" title="My Projects">Projects</a></li>
+                
+              </ul>
+            </nav>
+          </div>
+          
+          <div><nav class="cover-navigation navigation--social">
+  <ul class="navigation">
+
+  
+
+  
+  <!-- Github -->
+  <li class="navigation__item">
+    <a href="https://github.com/geksong" title="@geksong 的 Github" target="_blank">
+      <i class='social fa fa-github'></i>
+      <span class="label">Github</span>
+    </a>
+  </li>
+  
+  
+  
+
+  
+
+  <!-- RSS -->
+  <li class="navigation__item">
+    <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+      <i class='social fa fa-rss'></i>
+      <span class="label">RSS</span>
+    </a>
+  </li>
+
+  
+  <!-- Email -->
+  <li class="navigation__item">
+    <a href="mailto:zengzhangsong@gmail.com" title="Contact me">
+      <i class='social fa fa-envelope'></i>
+      <span class="label">Email</span>
+    </a>
+  </li>
+  
+
+  </ul>
+</nav>
+</div>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="2018-09-22 14:32:24 +0800" itemprop="datePublished" class="post-meta__date date">2018-09-22</time> &#8226; <span class="post-meta__tags tags"></span>
+    </div>
+    <h1 class="post-title">使docker容器内的进程不以pid=1运行</h1>
+  </header>
+
+  <section class="post">
+    <p>在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程
+<img src="/assets/images/docker-pid1/linux-process-struct.png" alt="" /></p>
+
+<p>在大多数情况下docker容器以pid=1运行应用程序进程，实际没什么问题，但当应用程序的进程派生出子进程的时候，而其父进程挂起之后，可能会导致派生出的子进程无法被回收。这是因为在linux系统里pid=1的进程默认要承担一个责任，就是接管游离的孤立进程。比如上图中，如果child(2)进程死掉了，而child(5)因为某些原因未能正常处理child(2)的关闭信号，导致没关闭，而是还在运行，此时child(5)进程就会被从进程树里孤立，处于无人管辖的状态
+<img src="/assets/images/docker-pid1/linux-process-orphaned.png" alt="" />
+在这种情形下，child(5)会被init进程接管
+<img src="/assets/images/docker-pid1/linux-process-adopt.png" alt="" /></p>
+
+<p>假如在接管游离进程的时候，pid=1的进程是我们应用程序进程，而游离的进程假如说是一个linux里的grep进程，此时即使把child(5)这个进程托管给pid=1的进程，但是因为我们的应用程序进程并没有实现处理这类进程的能力，就无法对这个游离进程进行回收，就会造成游离进程一直占用资源，无法回收。
+所以在docker里运行时不要让应用程序的进程占用pid=1，<code class="highlighter-rouge">docker run</code>命令提供了<code class="highlighter-rouge">--init</code>参数以保证容器启动一个完整的linux init system进程，这样就不会出现应用程序占用了pid=1。
+<img src="/assets/images/docker-pid1/docker-run-init.png" alt="" /></p>
+
+  </section>
+</article>
+
+<section class="read-more">
+   
+   
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">更早的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2018/09/redis-cluster/" title="link to redis cluster">redis cluster</a></h2>
+       <p class="excerpt">简介redis cluster是redis3.0版本官方退出的一种集群方案。目前redis的集群方案主要有三种方式。  一种是在客户端进行key分片。这种一般都是基于一致性hash算法实现，如果集群要扩容必须要手动操作，且无法对客户端透明，因为客户端必须要跟集群里所有的节点进行连接  第二种是代理分片，即把第一种种的分片事情交由一个中间代理去专职处理，比如codis,twemproxy，代理负责命令转发，命令的执行路径基本上是client-&gt;proxy-&gt;redisserver...&hellip;</p>
+       <div class="post-list__meta"><time datetime="2018-09-22 14:32:24 +0800" class="post-list__meta--date date">2018-09-22</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/redis-cluster/>继续阅读</a></div>
+   </div>
+   
+</section>
+
+<section class="post-comments">
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/09/docker-pid1/";
+        this.page.identifier = "/2018/09/docker-pid1/";
+    };
+
+    var disqus_shortname = 'geksong-github-io';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+  
+  
+  
+</section>
+
+
+            <section class="footer">
+    <footer>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+
+    
+  </body>
+
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>disruptor</title>
+  <meta name="description" content="disruptor 是LMAX公司开源的无锁队列库。和java的阻塞队列很像，设计的初衷都是为了在线程间传输消息或事件。但disruptor有一些独有的特性">
+  <meta name="author" content="geksong">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="disruptor">
+  <meta name="twitter:description" content="disruptor 是LMAX公司开源的无锁队列库。和java的阻塞队列很像，设计的初衷都是为了在线程间传输消息或事件。但disruptor有一些独有的特性">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="disruptor">
+  <meta property="og:description" content="disruptor 是LMAX公司开源的无锁队列库。和java的阻塞队列很像，设计的初衷都是为了在线程间传输消息或事件。但disruptor有一些独有的特性">
+  
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+  <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/09/disruptor-quick-buffer/">
+  <link rel="alternate" type="application/rss+xml" title="Sixpence" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+  
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">
+        <i class="fa fa-list btn-mobile-menu__icon"></i>
+        <i class="fa fa-angle-up btn-mobile-close__icon hidden"></i>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+
+        <a href="/#blog" title="前往 Sixpence 的主页" class="blog-button"><img src="/assets/images/logo.jpeg" width="80" alt="Sixpence logo" class="panel-cover__logo logo" /></a>
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for Sixpence" class="blog-button">Sixpence</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">Always look up at the moon</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">Do not forget to early loyal</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        <p class="panel-cover__description"><a href="https://github.com/geksong/geksong.github.io" target="_blank">See the code</a></p>
+        
+        
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="Visit blog" class="blog-button">Blog</a></li>
+                
+                  <li class="navigation__item"><a href="http://github.com/geksong" target="_blank" title="My Projects">Projects</a></li>
+                
+              </ul>
+            </nav>
+          </div>
+          
+          <div><nav class="cover-navigation navigation--social">
+  <ul class="navigation">
+
+  
+
+  
+  <!-- Github -->
+  <li class="navigation__item">
+    <a href="https://github.com/geksong" title="@geksong 的 Github" target="_blank">
+      <i class='social fa fa-github'></i>
+      <span class="label">Github</span>
+    </a>
+  </li>
+  
+  
+  
+
+  
+
+  <!-- RSS -->
+  <li class="navigation__item">
+    <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+      <i class='social fa fa-rss'></i>
+      <span class="label">RSS</span>
+    </a>
+  </li>
+
+  
+  <!-- Email -->
+  <li class="navigation__item">
+    <a href="mailto:zengzhangsong@gmail.com" title="Contact me">
+      <i class='social fa fa-envelope'></i>
+      <span class="label">Email</span>
+    </a>
+  </li>
+  
+
+  </ul>
+</nav>
+</div>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="2018-09-18 14:32:24 +0800" itemprop="datePublished" class="post-meta__date date">2018-09-18</time> &#8226; <span class="post-meta__tags tags"></span>
+    </div>
+    <h1 class="post-title">disruptor</h1>
+  </header>
+
+  <section class="post">
+    <p>disruptor 是LMAX公司开源的无锁队列库。和java的阻塞队列很像，设计的初衷都是为了在线程间传输消息或事件。但disruptor有一些独有的特性</p>
+
+<ol>
+  <li>支持事件广播给所有消费者</li>
+  <li>事件内存预分配</li>
+  <li>无锁</li>
+</ol>
+
+<h2 id="组件">组件</h2>
+<h3 id="ring-buffer">Ring Buffer</h3>
+<p>Ring buffer是个环形队列，在disruptor中负责存储和更新传输的Event</p>
+
+<h3 id="sequence">Sequence</h3>
+<p>Sequence被用来标注disruptor中其他组件在ringbuffer中操作的位置。每个consumer(EventProcessor)和disruptor自身都会持有一个Sequence，绝大多数的并发操作都依赖于对Sequence的更新操作，因此Sequence和AtomicLong一样支持大多数的线程安全操作，但Sequence比AtomicLong提供的一个优化是避免了<a href="http://ifeve.com/falsesharing/">伪共享问题</a></p>
+
+<p><img src="/assets/images/disruptor-arch.png" alt="" /></p>
+
+<h3 id="bytebuffer">ByteBuffer</h3>
+<ol>
+  <li>缓冲区</li>
+  <li>可分配jvm内存也可以直接分配操作系统内存</li>
+  <li>可切换读和写模式</li>
+</ol>
+
+  </section>
+</article>
+
+<section class="read-more">
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">最近的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2018/09/redis-cluster/" title="link to redis cluster">redis cluster</a></h2>
+       <p class="excerpt">简介redis cluster是redis3.0版本官方退出的一种集群方案。目前redis的集群方案主要有三种方式。  一种是在客户端进行key分片。这种一般都是基于一致性hash算法实现，如果集群要扩容必须要手动操作，且无法对客户端透明，因为客户端必须要跟集群里所有的节点进行连接  第二种是代理分片，即把第一种种的分片事情交由一个中间代理去专职处理，比如codis,twemproxy，代理负责命令转发，命令的执行路径基本上是client-&gt;proxy-&gt;redisserver...&hellip;</p>
+       <div class="post-list__meta"><time datetime="2018-09-22 14:32:24 +0800" class="post-list__meta--date date">2018-09-22</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/redis-cluster/>继续阅读</a></div>
+   </div>
+   
+   
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">更早的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2018/08/rocketmq-devenv/" title="link to rocketmq console">rocketmq console</a></h2>
+       <p class="excerpt">&hellip;</p>
+       <div class="post-list__meta"><time datetime="2018-08-21 14:32:24 +0800" class="post-list__meta--date date">2018-08-21</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/08/rocketmq-devenv/>继续阅读</a></div>
+   </div>
+   
+</section>
+
+<section class="post-comments">
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/09/disruptor-quick-buffer/";
+        this.page.identifier = "/2018/09/disruptor-quick-buffer/";
+    };
+
+    var disqus_shortname = 'geksong-github-io';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+  
+  
+  
+</section>
+
+
+            <section class="footer">
+    <footer>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+
+    
+  </body>
+
+</html>

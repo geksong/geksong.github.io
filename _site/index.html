@@ -128,6 +128,34 @@
   <ol class="post-list">
     
     <li>
+      <h2 class="post-list__post-title post-title"><a href="/2018/09/docker-pid1/" title="访问 使docker容器内的进程不以pid=1运行">使docker容器内的进程不以pid=1运行</a></h2>
+      <p class="excerpt">在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程在大多数情况下docker容器以pid=1运行应用程序进程，实际没什么问题，但当应用程序的进程派生出子进程的时候，而其父进程挂起之后，可能会导致派生出的子进程无法被回收。这是因为在linux系统里pid=1的进程默认要承担一个...&hellip;</p>
+      <div class="post-list__meta"><time datetime="2018-09-22 14:32:24 +0800" class="post-list__meta--date date">2018-09-22</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/docker-pid1/>继续阅读</a></div>
+      <hr class="post-list__divider" />
+    </li>
+    
+    <li>
+      <h2 class="post-list__post-title post-title"><a href="/2018/09/redis-cluster/" title="访问 redis cluster">redis cluster</a></h2>
+      <p class="excerpt">简介redis cluster是redis3.0版本官方退出的一种集群方案。目前redis的集群方案主要有三种方式。  一种是在客户端进行key分片。这种一般都是基于一致性hash算法实现，如果集群要扩容必须要手动操作，且无法对客户端透明，因为客户端必须要跟集群里所有的节点进行连接  第二种是代理分片，即把第一种种的分片事情交由一个中间代理去专职处理，比如codis,twemproxy，代理负责命令转发，命令的执行路径基本上是client-&gt;proxy-&gt;redisserver...&hellip;</p>
+      <div class="post-list__meta"><time datetime="2018-09-22 14:32:24 +0800" class="post-list__meta--date date">2018-09-22</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/redis-cluster/>继续阅读</a></div>
+      <hr class="post-list__divider" />
+    </li>
+    
+    <li>
+      <h2 class="post-list__post-title post-title"><a href="/2018/09/disruptor-quick-buffer/" title="访问 disruptor">disruptor</a></h2>
+      <p class="excerpt">disruptor 是LMAX公司开源的无锁队列库。和java的阻塞队列很像，设计的初衷都是为了在线程间传输消息或事件。但disruptor有一些独有的特性  支持事件广播给所有消费者  事件内存预分配  无锁组件Ring BufferRing buffer是个环形队列，在disruptor中负责存储和更新传输的EventSequenceSequence被用来标注disruptor中其他组件在ringbuffer中操作的位置。每个consumer(EventProcessor)和disru...&hellip;</p>
+      <div class="post-list__meta"><time datetime="2018-09-18 14:32:24 +0800" class="post-list__meta--date date">2018-09-18</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/disruptor-quick-buffer/>继续阅读</a></div>
+      <hr class="post-list__divider" />
+    </li>
+    
+    <li>
+      <h2 class="post-list__post-title post-title"><a href="/2018/08/rocketmq-devenv/" title="访问 rocketmq console">rocketmq console</a></h2>
+      <p class="excerpt">&hellip;</p>
+      <div class="post-list__meta"><time datetime="2018-08-21 14:32:24 +0800" class="post-list__meta--date date">2018-08-21</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/08/rocketmq-devenv/>继续阅读</a></div>
+      <hr class="post-list__divider" />
+    </li>
+    
+    <li>
       <h2 class="post-list__post-title post-title"><a href="/2018/07/docker-jib/" title="访问 Google jib镜像打包试水">Google jib镜像打包试水</a></h2>
       <p class="excerpt">介绍Jib是google开源的镜像构建工具，提供以maven plugin的方式实现应用打包成docker的镜像。最主要的目标是将dockerfile，docker build，docker push这样偏发布运维层面的事情对开发者屏蔽，想想一个应用开发者当需要创建一个应用生成镜像时要写一个复杂的Dockerfile，是何其痛苦的事情。jib则帮做了这件事情，使得应用开发不再需要关注镜像打包的细节，集成在mvn package阶段，coder just coding。Jib的打包是dock...&hellip;</p>
       <div class="post-list__meta"><time datetime="2018-07-20 14:32:24 +0800" class="post-list__meta--date date">2018-07-20</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/07/docker-jib/>继续阅读</a></div>
