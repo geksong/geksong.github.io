@@ -128,6 +128,13 @@
   <ol class="post-list">
     
     <li>
+      <h2 class="post-list__post-title post-title"><a href="/2018/10/docker-cobar/" title="访问 Docker image build for cobar">Docker image build for cobar</a></h2>
+      <p class="excerpt">由于cobar的开源项目里没有提供Dockerfile，无法直接生成docker镜像，需要自己编写Dockerfile并build镜像。这里是将配置和cobar本身的jar及启动脚本打在一个镜像里。项目路径示例里将mysql和cobar都在同一个宿主机的不同container里，本机的3307,3308,3309三个端口分别对应于本机的三个mysql容器，实际存储的数据目录都在宿主机的/dockerenv/cobarmysql/mysql/3307/data, /dockerenv/cob...&hellip;</p>
+      <div class="post-list__meta"><time datetime="2018-10-10 14:32:24 +0800" class="post-list__meta--date date">2018-10-10</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/10/docker-cobar/>继续阅读</a></div>
+      <hr class="post-list__divider" />
+    </li>
+    
+    <li>
       <h2 class="post-list__post-title post-title"><a href="/2018/09/docker-pid1/" title="访问 使docker容器内的进程不以pid=1运行">使docker容器内的进程不以pid=1运行</a></h2>
       <p class="excerpt">在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程在大多数情况下docker容器以pid=1运行应用程序进程，实际没什么问题，但当应用程序的进程派生出子进程的时候，而其父进程挂起之后，可能会导致派生出的子进程无法被回收。这是因为在linux系统里pid=1的进程默认要承担一个...&hellip;</p>
       <div class="post-list__meta"><time datetime="2018-09-22 14:32:24 +0800" class="post-list__meta--date date">2018-09-22</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/docker-pid1/>继续阅读</a></div>
@@ -190,20 +197,15 @@
       <hr class="post-list__divider" />
     </li>
     
-    <li>
-      <h2 class="post-list__post-title post-title"><a href="/2015/08/springboot-velocity/" title="访问 spring boot & velocity">spring boot & velocity</a></h2>
-      <p class="excerpt">maven版本pom.xml配置spring boot web应用必须使用 spring-boot-starter-parent 作为父节点.dependency 必须的有 spring-boot-starter-web , spring-boot-starter-velocity , spring-boot-starter-test,spring-boot-starter-actuator,junit大致的pom.xml文件内容为  &lt;parent&gt;    &lt;group...&hellip;</p>
-      <div class="post-list__meta"><time datetime="2015-08-06 14:32:24 +0800" class="post-list__meta--date date">2015-08-06</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2015/08/springboot-velocity/>继续阅读</a></div>
-      <hr class="post-list__divider" />
-    </li>
-    
   </ol>
 
   <hr class="post-list__divider " />
 
 <nav class="pagination" role="navigation">
     
-    <span class="pagination__page-number">1 / 1</span>
+    <span class="pagination__page-number">1 / 2</span>
+    
+        <a class="older-posts pagination__older btn btn-small btn-tertiary" href="/page/2/#blog">更早 &rarr;</a>
     
 </nav>
 

@@ -5,9 +5,167 @@
     <description>Do not forget to early loyal</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 09 Oct 2018 19:10:17 +0800</pubDate>
-    <lastBuildDate>Tue, 09 Oct 2018 19:10:17 +0800</lastBuildDate>
+    <pubDate>Wed, 10 Oct 2018 19:59:46 +0800</pubDate>
+    <lastBuildDate>Wed, 10 Oct 2018 19:59:46 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Docker image build for cobar</title>
+        <description>&lt;p&gt;由于cobar的开源项目里没有提供Dockerfile，无法直接生成docker镜像，需要自己编写Dockerfile并build镜像。这里是将配置和cobar本身的jar及启动脚本打在一个镜像里。&lt;a href=&quot;https://github.com/geksong/cobar-docker.git&quot;&gt;项目路径&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;示例里将mysql和cobar都在同一个宿主机的不同container里，本机的&lt;code class=&quot;highlighter-rouge&quot;&gt;3307,3308,3309&lt;/code&gt;三个端口分别对应于本机的三个mysql容器，实际存储的数据目录都在宿主机的&lt;code class=&quot;highlighter-rouge&quot;&gt;/dockerenv/cobarmysql/mysql/3307/data, /dockerenv/cobarmysql/mysql/3308/data/, /dockerenv/cobarmysql/mysql/3309/data/&lt;/code&gt;，cobar container和mysql container位于同一个名为&lt;code class=&quot;highlighter-rouge&quot;&gt;private&lt;/code&gt;的docker network。部署如下图：
+&lt;img src=&quot;/assets/images/docker-cobar/container-distribute.png&quot; alt=&quot;&quot; /&gt;
+三个mysql容器内的3306端口映射到宿主机的&lt;code class=&quot;highlighter-rouge&quot;&gt;3307,3308,3309&lt;/code&gt;三个端口，cobar容器的&lt;code class=&quot;highlighter-rouge&quot;&gt;8066&lt;/code&gt;端口则直接映射到宿主机的&lt;code class=&quot;highlighter-rouge&quot;&gt;8066&lt;/code&gt;端口。&lt;/p&gt;
+
+&lt;p&gt;首先启动三个mysql的容器，这里使用5.7.23的mysql镜像，root的密码初始化为123456&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run -d -p 3307:3306 -v ~/dockerenv/cobarmysql/mysql/3307/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --restart always --name cobar-mysql-3307 --network private mysql:5.7.23
+
+docker run -d -p 3308:3306 -v ~/dockerenv/cobarmysql/mysql/3308/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --restart always --name cobar-mysql-3308 --network private mysql:5.7.23
+
+docker run -d -p 3309:3306 -v ~/dockerenv/cobarmysql/mysql/3309/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --restart always --name cobar-mysql-3309 --network private mysql:5.7.23
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;执行上述命令之后，可以通过docker container查看下容器是否已正常启动&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker container ls -a | grep mysql
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;如果看到三个mysql的容器都是UP的状态，则说明mysql容器已经正常启动，接下来开始准备cobar的docker镜像。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;本地创建一个cobar目录&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mkdir cobar
+cd cobar
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;从cobar的release目录下载稳定版，这里用&lt;code class=&quot;highlighter-rouge&quot;&gt;1.2.7&lt;/code&gt;版本&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://github.com/alibaba/cobar/releases/download/v1.2.7/cobar-server-1.2.7.tar.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;下载完成之后，执行解压&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tar -xvzf cobar-server-1.2.7.tar.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;解压之后会在当前目录生成&lt;code class=&quot;highlighter-rouge&quot;&gt;cobar-server-1.2.7&lt;/code&gt;目录
+其中&lt;code class=&quot;highlighter-rouge&quot;&gt;cobar-server-1.2.7/bin&lt;/code&gt;是cobar的启停脚本，&lt;code class=&quot;highlighter-rouge&quot;&gt;cobar-server-1.2.7/conf&lt;/code&gt;是cobar的配置文件，这里需要将conf里的&lt;code class=&quot;highlighter-rouge&quot;&gt;rule.xml,schema.xml,server.xml&lt;/code&gt;三个文件拷贝到当前目录，然后修改其中的集群，用户名和密码等配置，docker打包镜像的时候，需要将这三个文件拷贝到镜像里，覆盖&lt;code class=&quot;highlighter-rouge&quot;&gt;cobar-server-1.2.7/conf&lt;/code&gt;下的配置文件。
+conf默认的配置里提供了一个dbtest的schema配置，这里示例基本不怎么修改，只修改&lt;code class=&quot;highlighter-rouge&quot;&gt;schema.xml&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;dataSource&amp;gt;&lt;/code&gt;节点内容，因为其中配置了cobar代理的多个mysql节点的ip和端口，这里的ip需要换成docker容器网络内的ip，不能写127.0.0.1，因为cobar运行在容器里，127.0.0.1是他自己，并不是宿主机网络ip。mysql在容器网络内的ip可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;docker network inspect private | grep -A 5 mysql&lt;/code&gt;查询到&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;dataSource name=&quot;dsTest&quot; type=&quot;mysql&quot;&amp;gt;
+    &amp;lt;property name=&quot;location&quot;&amp;gt;
+      &amp;lt;location&amp;gt;172.18.0.12:3307/dbtest&amp;lt;/location&amp;gt;
+      &amp;lt;location&amp;gt;172.18.0.13:3308/dbtest&amp;lt;/location&amp;gt;
+      &amp;lt;location&amp;gt;172.18.0.14:3309/dbtest&amp;lt;/location&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property name=&quot;user&quot;&amp;gt;root&amp;lt;/property&amp;gt;
+    &amp;lt;property name=&quot;password&quot;&amp;gt;123456&amp;lt;/property&amp;gt;
+    &amp;lt;property name=&quot;sqlMode&quot;&amp;gt;STRICT_TRANS_TABLES&amp;lt;/property&amp;gt;
+&amp;lt;/dataSource&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;编写cobar的Dockerfile&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;基础镜像使用openjdk:8，因为cobar本身需要java运行环境。容器内我们以&lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/cobar&lt;/code&gt;作为cobar的工作目录，注意一定要创建&lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/cobar/logs&lt;/code&gt;目录，因为cobar启动的时候写日志在这个目录，但是并不会自己生成logs目录。这里容器的启动入口，是一个自定义的&lt;code class=&quot;highlighter-rouge&quot;&gt;./bin/run.sh&lt;/code&gt;，而不是cobar自带的&lt;code class=&quot;highlighter-rouge&quot;&gt;./bin/startup.sh&lt;/code&gt;脚本，是因为cobar启动的时候不是一个交互式tty，docker会认为startup.sh执行完成后就结束了，容器会自动exit。&lt;code class=&quot;highlighter-rouge&quot;&gt;./bin/run.sh&lt;/code&gt;在其中以&lt;code class=&quot;highlighter-rouge&quot;&gt;tail -f&lt;/code&gt;命令结束，维持了一个交互式命令，容器就不会自动退出
+Dockerfile如下:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;FROM openjdk:8
+COPY ./cobar-server-1.2.7 /usr/local/cobar
+COPY ./server.xml /usr/local/cobar/conf/server.xml
+COPY ./scheme.xml /usr/local/cobar/conf/schema.xml
+COPY ./rule.xml /usr/local/cobar/conf/rule.xml
+COPY ./run.sh /usr/local/cobar/bin/run.sh
+RUN mkdir -p /usr/local/cobar/logs
+WORKDIR /usr/local/cobar
+EXPOSE 8066
+ENTRYPOINT exec /bin/sh ./bin/run.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;run.sh如下:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;touch file.log
+
+/bin/sh ./bin/startup.sh
+
+tail -f file.log
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;创建镜像&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Dockerfile准备好之后，就行开始打包镜像了。在当前目录执行如下命令&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker build -t org.sixpence.cordock:0.0.1 .
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;输出&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Sending build context to Docker daemon  3.206MB
+Step 1/10 : FROM openjdk:8
+ ---&amp;gt; 81f83aac57d6
+Step 2/10 : COPY ./cobar-server-1.2.7 /usr/local/cobar
+ ---&amp;gt; Using cache
+ ---&amp;gt; 394f864871af
+Step 3/10 : COPY ./server.xml /usr/local/cobar/conf/server.xml
+ ---&amp;gt; Using cache
+ ---&amp;gt; 182a4cf9b73f
+Step 4/10 : COPY ./schema.xml /usr/local/cobar/conf/schema.xml
+ ---&amp;gt; Using cache
+ ---&amp;gt; 3ce43783b97a
+Step 5/10 : COPY ./rule.xml /usr/local/cobar/conf/rule.xml
+ ---&amp;gt; Using cache
+ ---&amp;gt; 704b8eeb69ea
+Step 6/10 : COPY ./run.sh /usr/local/cobar/bin/run.sh
+ ---&amp;gt; Using cache
+ ---&amp;gt; 100dc7313542
+Step 7/10 : RUN mkdir -p /usr/local/cobar/logs
+ ---&amp;gt; Using cache
+ ---&amp;gt; a845b1563049
+Step 8/10 : WORKDIR /usr/local/cobar
+ ---&amp;gt; Using cache
+ ---&amp;gt; 5982987498d0
+Step 9/10 : EXPOSE 8066
+ ---&amp;gt; Using cache
+ ---&amp;gt; 19ee59d5f852
+Step 10/10 : ENTRYPOINT exec /bin/sh ./bin/run.sh
+ ---&amp;gt; Using cache
+ ---&amp;gt; ffbacc43c43c
+Successfully built ffbacc43c43c
+Successfully tagged org.sixpence.cordock:0.0.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;则镜像打包完成，通过&lt;code class=&quot;highlighter-rouge&quot;&gt;docker images | grep cordock&lt;/code&gt;可以看到本地的镜像仓库已经有刚打出来的镜像&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;org.sixpence.cordock                                                 0.0.1                                      ffbacc43c43c        8 hours ago         626MB
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;运行cobar容器&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;执行docker run命令则可以创建容器，并启动&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run -d -p 8066:8066 -e TZ=&quot;Asia/Shanghai&quot; --init --name cobar-default --network private org.sixpence.cordock:0.0.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;-e TZ=&quot;Asia/Shanghai&quot;&lt;/code&gt;用来指定容器的时区，否则时间会和国内时间不一致。&lt;code class=&quot;highlighter-rouge&quot;&gt;--init&lt;/code&gt;显示指定容器启动完整的init system进程，这样我们的cobar进程就不会占用了1号进程。
+执行完成之后，通过&lt;code class=&quot;highlighter-rouge&quot;&gt;docker container ls -a | grep cobar&lt;/code&gt;能看到cobar容器状态是UP。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;client连接&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;通过mysql客户端&lt;/li&gt;
+    &lt;/ul&gt;
+
+    &lt;p&gt;cobar本身是完全实现mysql的通讯协议的，所以基本上所有的mysql客户端都可以连接，只是有一些命令是禁止，比如join操作。其他的使用上基本上没差别&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;通过java&lt;/li&gt;
+    &lt;/ul&gt;
+
+    &lt;p&gt;cobar官方提供了对应Driver，主要是2.0版本的driver提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;cobar_cluster&lt;/code&gt;的支持，如果需要使用&lt;code class=&quot;highlighter-rouge&quot;&gt;cobar_cluster&lt;/code&gt;的高可用，则需要&lt;code class=&quot;highlighter-rouge&quot;&gt;server.xml&lt;/code&gt;中配置&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;cluster&amp;gt;&lt;/code&gt;节点。否则会找不到cluster&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Wed, 10 Oct 2018 14:32:24 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/docker-cobar/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/docker-cobar/</guid>
+        
+        
+      </item>
     
       <item>
         <title>使docker容器内的进程不以pid=1运行</title>
@@ -892,205 +1050,6 @@ public class Activity618Test {
         <pubDate>Fri, 21 Aug 2015 14:32:24 +0800</pubDate>
         <link>http://localhost:4000/2015/08/springmvc-velocity/</link>
         <guid isPermaLink="true">http://localhost:4000/2015/08/springmvc-velocity/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>spring boot &amp; velocity</title>
-        <description>&lt;h2 id=&quot;maven版本&quot;&gt;maven版本&lt;/h2&gt;
-&lt;h3 id=&quot;pomxml配置&quot;&gt;pom.xml配置&lt;/h3&gt;
-&lt;p&gt;spring boot web应用必须使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;spring-boot-starter-parent&lt;/code&gt; 作为父节点.
-dependency 必须的有 &lt;code class=&quot;highlighter-rouge&quot;&gt;spring-boot-starter-web&lt;/code&gt; , &lt;code class=&quot;highlighter-rouge&quot;&gt;spring-boot-starter-velocity&lt;/code&gt; , &lt;code class=&quot;highlighter-rouge&quot;&gt;spring-boot-starter-test&lt;/code&gt;,&lt;code class=&quot;highlighter-rouge&quot;&gt;spring-boot-starter-actuator&lt;/code&gt;,&lt;code class=&quot;highlighter-rouge&quot;&gt;junit&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;大致的pom.xml文件内容为&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &amp;lt;parent&amp;gt;
-    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
-    &amp;lt;artifactId&amp;gt;spring-boot-starter-parent&amp;lt;/artifactId&amp;gt;
-    &amp;lt;version&amp;gt;1.2.5.RELEASE&amp;lt;/version&amp;gt;
-  &amp;lt;/parent&amp;gt;
-  &amp;lt;dependencies&amp;gt;
-    &amp;lt;dependency&amp;gt;
-      &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
-      &amp;lt;artifactId&amp;gt;spring-boot-starter-web&amp;lt;/artifactId&amp;gt;
-      &amp;lt;version&amp;gt;${spring.boot.version}&amp;lt;/version&amp;gt;
-    &amp;lt;/dependency&amp;gt;
-    &amp;lt;dependency&amp;gt;
-      &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
-      &amp;lt;artifactId&amp;gt;spring-boot-starter-velocity&amp;lt;/artifactId&amp;gt;
-    &amp;lt;/dependency&amp;gt;
-    &amp;lt;dependency&amp;gt;
-      &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
-      &amp;lt;artifactId&amp;gt;spring-boot-starter-test&amp;lt;/artifactId&amp;gt;
-      &amp;lt;scope&amp;gt;test&amp;lt;/scope&amp;gt;
-    &amp;lt;/dependency&amp;gt;
-    &amp;lt;dependency&amp;gt;
-      &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
-      &amp;lt;artifactId&amp;gt;spring-boot-starter-actuator&amp;lt;/artifactId&amp;gt;
-    &amp;lt;/dependency&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;spring-boot-启动入口&quot;&gt;spring boot 启动入口&lt;/h3&gt;
-&lt;p&gt;spring boot 的启动入口是一个简单的main函数，类必须要&lt;code class=&quot;highlighter-rouge&quot;&gt;@SpringBootApplication&lt;/code&gt;注解，在此入口处
-可通过&lt;code class=&quot;highlighter-rouge&quot;&gt;@ImportResource&lt;/code&gt;引入你自己的spring xml配置文件&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ImportResource;
-
-/**
- * spring boot 启动
- * Created by geksong on 15/8/4.
- */
-@SpringBootApplication
-@ImportResource(value = {&quot;classpath:applicationContext-common.xml&quot;})
-public class Bootstrap {
-    public static void main(String[] args) {
-        ConfigurableApplicationContext configurableApplicationContext = SpringApplication.run(Bootstrap.class, args);
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;spring-boot-配置&quot;&gt;spring boot 配置&lt;/h3&gt;
-&lt;p&gt;理论上说spring boot开箱即用，不需要配置。但实际生产环境中还是需要做配置的，比如单机要跑多实例，端口就需要改。
-spring boot的配置文件默认都是在 &lt;code class=&quot;highlighter-rouge&quot;&gt;src/main/resources/application.properties&lt;/code&gt; 文件中。
-一些比较常用的配置如下&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# EMBEDDED SERVER CONFIGURATION (ServerProperties)
-server.port=8080
-
-# HTTP encoding (HttpEncodingProperties)
-# the encoding of HTTP requests/responses
-spring.http.encoding.charset=UTF-8
-# enable http encoding support
-spring.http.encoding.enabled=true
-# force the configured encoding
-spring.http.encoding.force=true
-
-# Velocity config
-spring.velocity.content-type=text/html;charset=UTF-8
-spring.velocity.dateToolAttribute=dateTool
-spring.velocity.properties.input.encoding=UTF-8
-spring.velocity.properties.output.encoding=UTF-8
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;还记得大明湖畔的 &lt;code class=&quot;highlighter-rouge&quot;&gt;velocity.properties&lt;/code&gt; 吗～？现在不需要了，在 &lt;code class=&quot;highlighter-rouge&quot;&gt;application.properties&lt;/code&gt; 文件中有
-可设置的velocity配置。velocity乱码～？需要设置 &lt;code class=&quot;highlighter-rouge&quot;&gt;input.encoding&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;output.encoding&lt;/code&gt; ，如上图
-&lt;code class=&quot;highlighter-rouge&quot;&gt;spring.velocity&lt;/code&gt; 是前缀， &lt;code class=&quot;highlighter-rouge&quot;&gt;properties&lt;/code&gt; 是键名，最终spring boot启动的时候会被包装成 &lt;code class=&quot;highlighter-rouge&quot;&gt;VelocityProperties&lt;/code&gt;
-注入到 &lt;code class=&quot;highlighter-rouge&quot;&gt;VelocityAutoConfiguration&lt;/code&gt; 中&lt;/p&gt;
-
-&lt;h3 id=&quot;faq&quot;&gt;FAQ&lt;/h3&gt;
-&lt;h4 id=&quot;如何实现rest接口&quot;&gt;如何实现rest接口&lt;/h4&gt;
-&lt;p&gt;spring boot 已经帮你配置好了spring mvc。实现rest有两种方式&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;@Controller + @ResponseBody
-使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;@ResponseBody&lt;/code&gt; 注解的方法直接返回java pojo，spring mvc将包装为json返回
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@Controller
-public class Activity618 {
-
- @ResponseBody
- @RequestMapping(&quot;/finance/activity/findModel&quot;)
- public ActivityModel findModel() {
-     Date date = HolidaysUtils.addWorkday(new Date(), 3);
-     ActivityModel activityModel = new ActivityModel();
-     activityModel.setAge(34);
-     activityModel.setName(&quot;上来就撒娇&quot;);
-     return activityModel;
- }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;@RestController
-&lt;code class=&quot;highlighter-rouge&quot;&gt;@RestController&lt;/code&gt; 实际上是 &lt;code class=&quot;highlighter-rouge&quot;&gt;@Controller&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;@ResponseBody&lt;/code&gt; 包装的语法糖
-使用此注解的controller，方法返回java pojo，即是rest接口
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@RestController
-public class Activity618 {
-
- @RequestMapping(&quot;/finance/activity/findModel&quot;)
- public ActivityModel findModel() {
-     Date date = HolidaysUtils.addWorkday(new Date(), 3);
-     ActivityModel activityModel = new ActivityModel();
-     activityModel.setAge(34);
-     activityModel.setName(&quot;上来就撒娇&quot;);
-     return activityModel;
- }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h4 id=&quot;如何使用velocity模版渲染&quot;&gt;如何使用velocity模版渲染&lt;/h4&gt;
-&lt;p&gt;spring boot 的velocity模版要求放在 &lt;code class=&quot;highlighter-rouge&quot;&gt;src/main/resources/templates&lt;/code&gt; 目录下，spring boot的view名支持
-此目录下的层级目录方式假如我有一个velocity文件是 &lt;code class=&quot;highlighter-rouge&quot;&gt;src/main/resources/templates/index/index.vm&lt;/code&gt; 。则
-此对应的view名是 &lt;code class=&quot;highlighter-rouge&quot;&gt;index/index&lt;/code&gt;&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@Controller
-public class Activity618 {
-
-    @RequestMapping(&quot;/finance/activity/718&quot;)
-    public String toIndex(Model model) {
-        model.addAttribute(&quot;message&quot;, &quot;是老骥伏枥时间&quot;);
-        return &quot;index/index&quot;;
-    }
-
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h2 id=&quot;gradle版本&quot;&gt;gradle版本&lt;/h2&gt;
-&lt;h3 id=&quot;gradle-配置文件内容&quot;&gt;gradle 配置文件内容&lt;/h3&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;group 'org.geksong'
-version '1.0-SNAPSHOT'
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath(&quot;org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE&quot;)
-    }
-}
-p
-apply plugin: 'java'
-apply plugin: 'scala'
-apply plugin: 'spring-boot'
-apply plugin: 'war'
-
-jar {
-    baseName = &quot;play-framework-demo&quot;
-    version = &quot;1.0-SNAPSHOT&quot;
-}
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile &quot;org.springframework.boot:spring-boot-starter-web&quot;
-    compile &quot;org.scala-lang:scala-library:2.11.6&quot;
-    compile &quot;org.scala-lang:scala-compiler:2.11.6&quot;
-    compile &quot;org.scala-lang:scala-reflect:2.11.6&quot;
-    compile &quot;org.apache.httpcomponents:httpclient:4.3.6&quot;
-    compile &quot;com.alibaba:fastjson:1.1.41&quot;
-    compile &quot;org.slf4j:slf4j-api:1.7.5&quot;
-    compile &quot;org.apache.commons:commons-lang3:3.2&quot;
-    compile &quot;commons-httpclient:commons-httpclient:3.1&quot;
-    compile &quot;org.apache.velocity:velocity:1.7&quot;
-    compile &quot;org.apache.velocity:velocity-tools:2.0&quot;
-    compile &quot;jstl:jstl:1.2&quot;
-    compile &quot;org.apache.tomcat.embed:tomcat-embed-jasper&quot;
-    compile &quot;org.springframework.boot:spring-boot-starter-velocity&quot;
-    testCompile group: 'junit', name: 'junit', version: '4.11'
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-</description>
-        <pubDate>Thu, 06 Aug 2015 14:32:24 +0800</pubDate>
-        <link>http://localhost:4000/2015/08/springboot-velocity/</link>
-        <guid isPermaLink="true">http://localhost:4000/2015/08/springboot-velocity/</guid>
         
         
       </item>

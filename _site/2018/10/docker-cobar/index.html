@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Docker image build for cobar</title>
+  <meta name="description" content="由于cobar的开源项目里没有提供Dockerfile，无法直接生成docker镜像，需要自己编写Dockerfile并build镜像。这里是将配置和cobar本身的jar及启动脚本打在一个镜像里。项目路径">
+  <meta name="author" content="geksong">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Docker image build for cobar">
+  <meta name="twitter:description" content="由于cobar的开源项目里没有提供Dockerfile，无法直接生成docker镜像，需要自己编写Dockerfile并build镜像。这里是将配置和cobar本身的jar及启动脚本打在一个镜像里。项目路径">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Docker image build for cobar">
+  <meta property="og:description" content="由于cobar的开源项目里没有提供Dockerfile，无法直接生成docker镜像，需要自己编写Dockerfile并build镜像。这里是将配置和cobar本身的jar及启动脚本打在一个镜像里。项目路径">
+  
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+  <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
+  
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="canonical" href="http://localhost:4000/2018/10/docker-cobar/">
+  <link rel="alternate" type="application/rss+xml" title="Sixpence" href="http://localhost:4000/feed.xml">
+  
+  <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
+  
+</head>
+
+
+  <body>
+
+    <span class="mobile btn-mobile-menu">
+        <i class="fa fa-list btn-mobile-menu__icon"></i>
+        <i class="fa fa-angle-up btn-mobile-close__icon hidden"></i>
+    </span>
+    
+    <header class="panel-cover panel-cover--collapsed" style="">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+
+        <a href="/#blog" title="前往 Sixpence 的主页" class="blog-button"><img src="/assets/images/logo.jpeg" width="80" alt="Sixpence logo" class="panel-cover__logo logo" /></a>
+        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for Sixpence" class="blog-button">Sixpence</a></h1>
+        
+        <span class="panel-cover__subtitle panel-subtitle">Always look up at the moon</span>
+        
+        <hr class="panel-cover__divider" />
+        <p class="panel-cover__description">Do not forget to early loyal</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary" />
+        
+        
+        <p class="panel-cover__description"><a href="https://github.com/geksong/geksong.github.io" target="_blank">See the code</a></p>
+        
+        
+        <div class="navigation-wrapper">
+          <div>
+            <nav class="cover-navigation cover-navigation--primary">
+              <ul class="navigation">
+                <li class="navigation__item"><a href="/#blog" title="Visit blog" class="blog-button">Blog</a></li>
+                
+                  <li class="navigation__item"><a href="http://github.com/geksong" target="_blank" title="My Projects">Projects</a></li>
+                
+              </ul>
+            </nav>
+          </div>
+          
+          <div><nav class="cover-navigation navigation--social">
+  <ul class="navigation">
+
+  
+
+  
+  <!-- Github -->
+  <li class="navigation__item">
+    <a href="https://github.com/geksong" title="@geksong 的 Github" target="_blank">
+      <i class='social fa fa-github'></i>
+      <span class="label">Github</span>
+    </a>
+  </li>
+  
+  
+  
+
+  
+
+  <!-- RSS -->
+  <li class="navigation__item">
+    <a href="/feed.xml" rel="author" title="RSS" target="_blank">
+      <i class='social fa fa-rss'></i>
+      <span class="label">RSS</span>
+    </a>
+  </li>
+
+  
+  <!-- Email -->
+  <li class="navigation__item">
+    <a href="mailto:zengzhangsong@gmail.com" title="Contact me">
+      <i class='social fa fa-envelope'></i>
+      <span class="label">Email</span>
+    </a>
+  </li>
+  
+
+  </ul>
+</nav>
+</div>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="panel-cover--overlay"></div>
+    
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+        <div class="content-wrapper__inner">
+            <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="2018-10-10 14:32:24 +0800" itemprop="datePublished" class="post-meta__date date">2018-10-10</time> &#8226; <span class="post-meta__tags tags"></span>
+    </div>
+    <h1 class="post-title">Docker image build for cobar</h1>
+  </header>
+
+  <section class="post">
+    <p>由于cobar的开源项目里没有提供Dockerfile，无法直接生成docker镜像，需要自己编写Dockerfile并build镜像。这里是将配置和cobar本身的jar及启动脚本打在一个镜像里。<a href="https://github.com/geksong/cobar-docker.git">项目路径</a></p>
+
+<p>示例里将mysql和cobar都在同一个宿主机的不同container里，本机的<code class="highlighter-rouge">3307,3308,3309</code>三个端口分别对应于本机的三个mysql容器，实际存储的数据目录都在宿主机的<code class="highlighter-rouge">/dockerenv/cobarmysql/mysql/3307/data, /dockerenv/cobarmysql/mysql/3308/data/, /dockerenv/cobarmysql/mysql/3309/data/</code>，cobar container和mysql container位于同一个名为<code class="highlighter-rouge">private</code>的docker network。部署如下图：
+<img src="/assets/images/docker-cobar/container-distribute.png" alt="" />
+三个mysql容器内的3306端口映射到宿主机的<code class="highlighter-rouge">3307,3308,3309</code>三个端口，cobar容器的<code class="highlighter-rouge">8066</code>端口则直接映射到宿主机的<code class="highlighter-rouge">8066</code>端口。</p>
+
+<p>首先启动三个mysql的容器，这里使用5.7.23的mysql镜像，root的密码初始化为123456</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d -p 3307:3306 -v ~/dockerenv/cobarmysql/mysql/3307/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --restart always --name cobar-mysql-3307 --network private mysql:5.7.23
+
+docker run -d -p 3308:3306 -v ~/dockerenv/cobarmysql/mysql/3308/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --restart always --name cobar-mysql-3308 --network private mysql:5.7.23
+
+docker run -d -p 3309:3306 -v ~/dockerenv/cobarmysql/mysql/3309/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --restart always --name cobar-mysql-3309 --network private mysql:5.7.23
+</code></pre></div></div>
+<p>执行上述命令之后，可以通过docker container查看下容器是否已正常启动</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker container ls -a | grep mysql
+</code></pre></div></div>
+<p>如果看到三个mysql的容器都是UP的状态，则说明mysql容器已经正常启动，接下来开始准备cobar的docker镜像。</p>
+
+<ul>
+  <li>本地创建一个cobar目录</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir cobar
+cd cobar
+</code></pre></div></div>
+<ul>
+  <li>从cobar的release目录下载稳定版，这里用<code class="highlighter-rouge">1.2.7</code>版本</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget https://github.com/alibaba/cobar/releases/download/v1.2.7/cobar-server-1.2.7.tar.gz
+</code></pre></div></div>
+<p>下载完成之后，执行解压</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tar -xvzf cobar-server-1.2.7.tar.gz
+</code></pre></div></div>
+<p>解压之后会在当前目录生成<code class="highlighter-rouge">cobar-server-1.2.7</code>目录
+其中<code class="highlighter-rouge">cobar-server-1.2.7/bin</code>是cobar的启停脚本，<code class="highlighter-rouge">cobar-server-1.2.7/conf</code>是cobar的配置文件，这里需要将conf里的<code class="highlighter-rouge">rule.xml,schema.xml,server.xml</code>三个文件拷贝到当前目录，然后修改其中的集群，用户名和密码等配置，docker打包镜像的时候，需要将这三个文件拷贝到镜像里，覆盖<code class="highlighter-rouge">cobar-server-1.2.7/conf</code>下的配置文件。
+conf默认的配置里提供了一个dbtest的schema配置，这里示例基本不怎么修改，只修改<code class="highlighter-rouge">schema.xml</code>中的<code class="highlighter-rouge">&lt;dataSource&gt;</code>节点内容，因为其中配置了cobar代理的多个mysql节点的ip和端口，这里的ip需要换成docker容器网络内的ip，不能写127.0.0.1，因为cobar运行在容器里，127.0.0.1是他自己，并不是宿主机网络ip。mysql在容器网络内的ip可以通过<code class="highlighter-rouge">docker network inspect private | grep -A 5 mysql</code>查询到</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;dataSource name="dsTest" type="mysql"&gt;
+    &lt;property name="location"&gt;
+      &lt;location&gt;172.18.0.12:3307/dbtest&lt;/location&gt;
+      &lt;location&gt;172.18.0.13:3308/dbtest&lt;/location&gt;
+      &lt;location&gt;172.18.0.14:3309/dbtest&lt;/location&gt;
+    &lt;/property&gt;
+    &lt;property name="user"&gt;root&lt;/property&gt;
+    &lt;property name="password"&gt;123456&lt;/property&gt;
+    &lt;property name="sqlMode"&gt;STRICT_TRANS_TABLES&lt;/property&gt;
+&lt;/dataSource&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>编写cobar的Dockerfile</li>
+</ul>
+
+<p>基础镜像使用openjdk:8，因为cobar本身需要java运行环境。容器内我们以<code class="highlighter-rouge">/usr/local/cobar</code>作为cobar的工作目录，注意一定要创建<code class="highlighter-rouge">/usr/local/cobar/logs</code>目录，因为cobar启动的时候写日志在这个目录，但是并不会自己生成logs目录。这里容器的启动入口，是一个自定义的<code class="highlighter-rouge">./bin/run.sh</code>，而不是cobar自带的<code class="highlighter-rouge">./bin/startup.sh</code>脚本，是因为cobar启动的时候不是一个交互式tty，docker会认为startup.sh执行完成后就结束了，容器会自动exit。<code class="highlighter-rouge">./bin/run.sh</code>在其中以<code class="highlighter-rouge">tail -f</code>命令结束，维持了一个交互式命令，容器就不会自动退出
+Dockerfile如下:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM openjdk:8
+COPY ./cobar-server-1.2.7 /usr/local/cobar
+COPY ./server.xml /usr/local/cobar/conf/server.xml
+COPY ./scheme.xml /usr/local/cobar/conf/schema.xml
+COPY ./rule.xml /usr/local/cobar/conf/rule.xml
+COPY ./run.sh /usr/local/cobar/bin/run.sh
+RUN mkdir -p /usr/local/cobar/logs
+WORKDIR /usr/local/cobar
+EXPOSE 8066
+ENTRYPOINT exec /bin/sh ./bin/run.sh
+</code></pre></div></div>
+
+<p>run.sh如下:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>touch file.log
+
+/bin/sh ./bin/startup.sh
+
+tail -f file.log
+</code></pre></div></div>
+
+<ul>
+  <li>创建镜像</li>
+</ul>
+
+<p>Dockerfile准备好之后，就行开始打包镜像了。在当前目录执行如下命令</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build -t org.sixpence.cordock:0.0.1 .
+</code></pre></div></div>
+<p>输出</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Sending build context to Docker daemon  3.206MB
+Step 1/10 : FROM openjdk:8
+ ---&gt; 81f83aac57d6
+Step 2/10 : COPY ./cobar-server-1.2.7 /usr/local/cobar
+ ---&gt; Using cache
+ ---&gt; 394f864871af
+Step 3/10 : COPY ./server.xml /usr/local/cobar/conf/server.xml
+ ---&gt; Using cache
+ ---&gt; 182a4cf9b73f
+Step 4/10 : COPY ./schema.xml /usr/local/cobar/conf/schema.xml
+ ---&gt; Using cache
+ ---&gt; 3ce43783b97a
+Step 5/10 : COPY ./rule.xml /usr/local/cobar/conf/rule.xml
+ ---&gt; Using cache
+ ---&gt; 704b8eeb69ea
+Step 6/10 : COPY ./run.sh /usr/local/cobar/bin/run.sh
+ ---&gt; Using cache
+ ---&gt; 100dc7313542
+Step 7/10 : RUN mkdir -p /usr/local/cobar/logs
+ ---&gt; Using cache
+ ---&gt; a845b1563049
+Step 8/10 : WORKDIR /usr/local/cobar
+ ---&gt; Using cache
+ ---&gt; 5982987498d0
+Step 9/10 : EXPOSE 8066
+ ---&gt; Using cache
+ ---&gt; 19ee59d5f852
+Step 10/10 : ENTRYPOINT exec /bin/sh ./bin/run.sh
+ ---&gt; Using cache
+ ---&gt; ffbacc43c43c
+Successfully built ffbacc43c43c
+Successfully tagged org.sixpence.cordock:0.0.1
+</code></pre></div></div>
+<p>则镜像打包完成，通过<code class="highlighter-rouge">docker images | grep cordock</code>可以看到本地的镜像仓库已经有刚打出来的镜像</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>org.sixpence.cordock                                                 0.0.1                                      ffbacc43c43c        8 hours ago         626MB
+</code></pre></div></div>
+
+<ul>
+  <li>运行cobar容器</li>
+</ul>
+
+<p>执行docker run命令则可以创建容器，并启动</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d -p 8066:8066 -e TZ="Asia/Shanghai" --init --name cobar-default --network private org.sixpence.cordock:0.0.1
+</code></pre></div></div>
+<p>这里的<code class="highlighter-rouge">-e TZ="Asia/Shanghai"</code>用来指定容器的时区，否则时间会和国内时间不一致。<code class="highlighter-rouge">--init</code>显示指定容器启动完整的init system进程，这样我们的cobar进程就不会占用了1号进程。
+执行完成之后，通过<code class="highlighter-rouge">docker container ls -a | grep cobar</code>能看到cobar容器状态是UP。</p>
+
+<ul>
+  <li>
+    <p>client连接</p>
+
+    <ul>
+      <li>通过mysql客户端</li>
+    </ul>
+
+    <p>cobar本身是完全实现mysql的通讯协议的，所以基本上所有的mysql客户端都可以连接，只是有一些命令是禁止，比如join操作。其他的使用上基本上没差别</p>
+
+    <ul>
+      <li>通过java</li>
+    </ul>
+
+    <p>cobar官方提供了对应Driver，主要是2.0版本的driver提供了<code class="highlighter-rouge">cobar_cluster</code>的支持，如果需要使用<code class="highlighter-rouge">cobar_cluster</code>的高可用，则需要<code class="highlighter-rouge">server.xml</code>中配置<code class="highlighter-rouge">&lt;cluster&gt;</code>节点。否则会找不到cluster</p>
+  </li>
+</ul>
+
+  </section>
+</article>
+
+<section class="read-more">
+   
+   
+   
+   
+   <div class="read-more-item">
+       <span class="read-more-item-dim">更早的文章</span>
+       <h2 class="post-list__post-title post-title"><a href="/2018/09/docker-pid1/" title="link to 使docker容器内的进程不以pid=1运行">使docker容器内的进程不以pid=1运行</a></h2>
+       <p class="excerpt">在docker容器内默认通过dockerfile里的CMD/ENTRYPOINT执行的命令的进程是pid为1的进程。但在linux系统里pid=1是系统内所有进程的父进程，非docker的linux系统pid=1的是init进程，其他的进程都直接或间接的成为它的子进程在大多数情况下docker容器以pid=1运行应用程序进程，实际没什么问题，但当应用程序的进程派生出子进程的时候，而其父进程挂起之后，可能会导致派生出的子进程无法被回收。这是因为在linux系统里pid=1的进程默认要承担一个...&hellip;</p>
+       <div class="post-list__meta"><time datetime="2018-09-22 14:32:24 +0800" class="post-list__meta--date date">2018-09-22</time> &#8226; <span class="post-list__meta--tags tags"></span><a class="btn-border-small" href=/2018/09/docker-pid1/>继续阅读</a></div>
+   </div>
+   
+</section>
+
+<section class="post-comments">
+  
+    <div id="disqus_thread"></div>
+    <script>
+    
+    var disqus_config = function () {
+        this.page.url = "http://localhost:4000/2018/10/docker-cobar/";
+        this.page.identifier = "/2018/10/docker-cobar/";
+    };
+
+    var disqus_shortname = 'geksong-github-io';
+    
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>要查看<a href="http://disqus.com/?ref_noscript"> Disqus </a>评论，请启用 JavaScript</noscript>
+    
+  
+  
+  
+  
+</section>
+
+
+            <section class="footer">
+    <footer>
+    </footer>
+</section>
+
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+
+    
+  </body>
+
+</html>
