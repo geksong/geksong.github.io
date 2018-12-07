@@ -94,7 +94,7 @@ done
 ```
 将此内容保存到一个sh文件中即可，分配slots时，只需要像如下的方式执行
 ```
-./cluster-slots.sh 127.0.0.1 7000 0 5000
+./cluster-slots.sh 127.0.0.1 7000 addslots 0 5000
 ```
 即可将0到5000范围的所有hash slots分配给```127.0.0.1 7000```这个节点及它的所有slave节点
 
@@ -133,6 +133,10 @@ slot的节点，集群不可服务。同理，当需要寻找一个hash slot应�
 在clusterNode里有一个16384/8长度的long数组，这个数组里每个值都是8位二进制，每个二进制位代表了对应的slot，值只有0和1，如果是0，则表示当前这个二进制位对应的slot不属于当前节点，否则则属于，同样也是O(1)时间复杂度就能确定一个slot是否应该是当前节点负责。
 
 ## HA
+### 复制
+redis的复制有两种 SYNC和PSYNC(redis2.8版本之后才有)
+当一个slave节点首次和master连接的时候，slave会发送sync命令，以要求全量复制，此时master将在后台fork子进程，执行dump，将当前的数据写入rdb文件，并且将后续接收到的命令写入到缓冲区，当dump完成之后，master会向slave发送ping命令确认连接可用性，然后将文件内容发送到slave，slave接收rdb，并将rdb文件进行加载，然后master通过命令传播的方式将从dump的时候接收到命令发送给slave，slave依次执行命令。在2.8版本之前，redis的slave如果有任何时候依次闪断，都需要重新到master节点进行全量同步，这样对于整个集群的带宽是一个非常大的负担。所以在2.8版本开始提供了另一种复制方式PSYNC，也就是增量复制，PSYNC这种方式，在master节点上维护了一个复制积压缓冲区，这是一个固定长度的连续区域，默认是1M，以及当前master的最大偏移(```master_repl_offset```)缓冲区中实际的数据长度(```repl_backlog_histlen```)。而slave需要记录的则是复制的master的runid和复制的最新偏移。当slave需要执行pysnc的时候，需要带上之前复制的runid以及复制的最新偏移，master在收到这个命令的时候，会做如下判断：
+
 谈到高可用围绕几个问题
 1. 集群里master节点可以挂几个
 2. slave如果断线重连会不会丢数据
